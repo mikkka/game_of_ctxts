@@ -1,0 +1,11 @@
+target
+.idea
+*.sc
+.DS_Store
+.sbtopts
+.bloop
+.bsp
+.metals
+.vscode
+metals.sbt
+.java-version
