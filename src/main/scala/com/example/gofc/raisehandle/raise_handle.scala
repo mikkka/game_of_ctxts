@@ -2,15 +2,6 @@ package com.example.gofc.raisehandle
 
 import cats.Functor
 import cats.Monad
-import cats.MonadError
-import cats.data.EitherT
-import cats.data.Kleisli
-import cats.effect.ExitCode
-import cats.effect.IO
-import cats.effect.IOApp
-import cats.effect.kernel.MonadCancel
-import cats.effect.std.Console
-import cats.effect.std.Console._
 import cats.effect.syntax.all._
 import cats.instances.all._
 import cats.mtl.Ask
@@ -20,6 +11,10 @@ import cats.mtl.syntax.all._
 import cats.syntax.all._
 
 import scala.util.control.NoStackTrace
+
+trait Cosnole[F[_]] {
+  def prntln(str: String): F[Unit]
+}
 
 trait Loopa[F[_]] {
   def loop()(implicit
@@ -44,7 +39,7 @@ class PrettyLoopa[F[_]: Monad: Raise[*[_], Throwable]] extends Loopa[F] {
 
 class Prg[F[_]: Monad](
   loopa: Loopa[F],
-  console: Console[F]
+  console: Cosnole[F]
 ) {
   def things()(
     implicit
@@ -56,29 +51,6 @@ class Prg[F[_]: Monad](
     loopa.loop()
       .handle{e: Throwable => "error: " + e.toString()}
       .handle{e: Int =>       s"epxception $e"}
-      .flatTap(console.println)
+      .flatTap(x => console.prntln("things happened "+ x))
 }
 
-object IOAppa extends IOApp {
-  type CtxIO[A] = Kleisli[IO, String, A]
-  type CtxErrIO[A] = EitherT[CtxIO, Int, A]
-
-  implicit def hellRaiser[F[_]](implicit ME: MonadError[F, Throwable]) = new Raise[F, Throwable] {
-    def functor: Functor[F] = ME
-
-    def raise[E2 <: Throwable, A](e: E2): F[A] = ME.raiseError(e)
-  }
-  
-  val prg = new Prg[CtxErrIO](
-    new PrettyLoopa[CtxErrIO],
-    implicitly[Console[CtxErrIO]]
-  )
-
-  override def run(args: List[String]): IO[ExitCode] = {
-    val kek = prg.things()
-    kek.value.run("100").flatTap(Console[IO].println).map(_.fold(
-      _ => ExitCode.Error,
-      _ => ExitCode.Success
-    ))
-  }
-}

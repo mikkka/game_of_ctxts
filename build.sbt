@@ -10,8 +10,10 @@ addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.13.2" cross CrossVers
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
 libraryDependencies += "org.typelevel" %% "cats-core" % "2.7.0"
-libraryDependencies += "org.typelevel" %% "cats-mtl" % "1.2.0"
+libraryDependencies += "org.typelevel" %% "cats-mtl" % "1.2.1"
 libraryDependencies += "org.typelevel" %% "cats-tagless-macros" % "0.14.0"
 
 libraryDependencies += "org.typelevel" %% "cats-effect" % "3.3.1"
+
 libraryDependencies += "dev.zio" %% "zio" % "1.0.12"
+libraryDependencies += "dev.zio" %% "zio-interop-cats" % "3.2.9.0"
