@@ -1,4 +1,4 @@
-package com.example.gofc.asnc
+package com.example.gofc.multictx
 
 import cats.Monad
 import cats.effect.syntax.all._
@@ -19,27 +19,31 @@ trait Cosnole[F[_]] {
 
 case class TinkyWinky(msg: String) extends Exception(msg, null) with NoStackTrace
 case class Buzer(msg: String)
-// case class Buzer(msg: String) extends Exception(msg, null) with NoStackTrace
 
+// we can use only untyped errors here
 trait Futa[F[_]] {
   def fromFut(fut: F[Future[String]])(implicit 
     asnc: Async[F],
-    _1  : Raise[F,Buzer]
+    _1  : Raise[F,Throwable],
+    _2  : Ask[F,String]
   ): F[Int]
 }
 
-class FutaImpl[F[_]: Monad: Raise[*[_], Throwable]] extends Futa[F] {
+class FutaImpl[F[_]: Monad] extends Futa[F] {
   def fromFut(fut: F[Future[String]])(implicit 
     asnc: Async[F],
-    _1  : Raise[F,Buzer]
+    _1  : Raise[F,Throwable],
+    ctx : Ask[F,String]
   ): F[Int] =
-    Async[F].fromFuture(fut) map (_.toInt) >>= {x => 
-      if (x > 200) Buzer("bigger than 200").raise
-      else if (x > 300) TinkyWinky(s"futa tinky $x").raise
-      else x.pure[F]
+    ctx.ask >>= { c => 
+      Async[F].fromFuture(fut) map (_.toInt + c.toInt) >>= {x => 
+        if (x > 200) TinkyWinky(s"futa tinky $x").raise
+        else x.pure[F]
+      }
     }
 }
 
+// we can use Throwable as unchecked and Buzer as cheched
 trait Loopa[F[_]] {
   def loop(start: Int)(implicit
     ctx :Ask[F,String],
@@ -59,44 +63,27 @@ class PrettyLoopa[F[_]: Monad: Raise[*[_], Throwable]] extends Loopa[F] {
     }).map(_.toString)
 }
 
+import cats.~>
 
-class PrgF[F[_]: Monad](
-  futa:  Futa[F],
+class PrgFG[G[_]: Monad, F[_]: Monad](
+  futa:  Futa[G],
   loopa: Loopa[F],
   console: Cosnole[F]
-) {
-  def things(fut: F[Future[String]])(
+)(implicit funK: G ~> F) {
+  def things(fut: G[Future[String]])(
     implicit
-      _0 : Async[F],
-      _1 : Ask[F, String],
-      _2 : Handle[F, Buzer],
-      _3 : Handle[F, Throwable]
+      _g0 : Async[G],
+      _g1 : Handle[G, Throwable],
+      _g2 : Ask[G,String],
+
+      _f1 : Ask[F, String],
+      _f2 : Handle[F, Buzer],
+      _f3 : Handle[F, Throwable]
   ): F[String] = 
-    futa.fromFut(fut) >>= {x => 
+    funK(futa.fromFut(fut)) >>= {x => 
       loopa.loop(x)
         .handle{e: Throwable => "error: " + e.toString()}
         .handle{e: Buzer =>       s"buzer $e"}
         .flatTap(x => console.prntln("things happened "+ x))
     }
 }
-
-class PrgFG[F[_]: Monad, G[_]: Monad](
-  futa:  Futa[F],
-  loopa: Loopa[F],
-  console: Cosnole[F]
-) {
-  def things(fut: F[Future[String]])(
-    implicit
-      _0 : Async[F],
-      _1 : Ask[F, String],
-      _2 : Handle[F, Buzer],
-      _3 : Handle[F, Throwable]
-  ): F[String] = 
-    futa.fromFut(fut) >>= {x => 
-      loopa.loop(x)
-        .handle{e: Throwable => "error: " + e.toString()}
-        .handle{e: Buzer =>       s"buzer $e"}
-        .flatTap(x => console.prntln("things happened "+ x))
-    }
-}
-
