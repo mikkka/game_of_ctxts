@@ -6,6 +6,7 @@ import zio.UIO
 import zio.RIO
 import zio.ZIO
 import cats.mtl.Raise
+import cats.data.EitherT
 
 object types {
   sealed trait BazCtx {
@@ -24,8 +25,8 @@ object types {
     type BazTSK[A] = Kleisli[IO, BazCtx, A] // can be bombed with throwable
     type GerTSK[A] = Kleisli[IO, GerCtx, A] // can be bombed with throwable
 
-    type BazFooTSK[A] = Kleisli[IO, BazCtx, Either[FooErr, A]] // can be bombed with throwable or FooErr
-    type GerBarTSK[A] = Kleisli[IO, GerCtx, Either[BarErr, A]] // can be bombed with throwable or BarErr
+    type BazFooTSK[A] = EitherT[Kleisli[IO, BazCtx, *], FooErr, A] // can be bombed with throwable or FooErr
+    type GerBarTSK[A] = EitherT[Kleisli[IO, GerCtx, *], BarErr, A] // can be bombed with throwable or BarErr
   }
   object zio {
     type TSK[A] = UIO[A] // can be defected with throwable

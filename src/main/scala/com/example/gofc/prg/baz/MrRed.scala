@@ -1,22 +1,29 @@
 package com.example.gofc.prg.baz
 
 import cats.Monad
-import cats.syntax.all._
+import cats.effect.kernel.Async
 import cats.mtl.Ask
-import cats.mtl.syntax.all._
-import com.example.gofc.types._
 import cats.mtl.Raise
+import cats.mtl.syntax.all._
+import cats.syntax.all._
+import com.example.gofc.types._
+
+import scala.concurrent.Future
 
 trait MrRed[F[_]] {
-  def hello(): F[String]
+  def hello()(implicit 
+    ask   : Ask[F, BazCtx]
+  ): F[String]
+
   def puke(): F[String]
 }
 
-class MrRedImpl[F[_]: Monad: Ask[*[_], BazCtx]: Raise[*[_], Throwable]] extends MrRed[F] {
+class MrRedImpl[F[_]: Monad : Raise[*[_], Throwable]] extends MrRed[F] {
   val baz: BazCtx => String = _.baz
 
-  def hello(): F[String] = 
-    baz.reader >>= {baz => s"mr Red greets ${baz}".pure}
+  def hello()(implicit 
+    ask :   Ask[F, BazCtx]
+  ): F[String] = baz.reader >>= {baz => s"mr Red greets ${baz}".pure}
 
   def puke(): F[String] = 
     new Exception("mr Red puked").raise

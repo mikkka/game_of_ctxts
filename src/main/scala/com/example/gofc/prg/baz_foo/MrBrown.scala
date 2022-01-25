@@ -8,7 +8,11 @@ import com.example.gofc.types._
 import cats.mtl.Raise
 
 trait MrBrown[F[_]] {
-  def hello(): F[String]
+  def hello()(implicit 
+    ask: Ask[F, BazCtx],
+    raise: Raise[F, MrBrownFail]
+  ): F[String]
+
   def puke(): F[String]
 }
 
@@ -17,13 +21,14 @@ case class MrBrownFail(cause: String) extends FooErr
 class MrBrownImpl[
   F[_]
   : Monad
-  : Ask[*[_], BazCtx]
   : Raise[*[_], Throwable]
-  : Raise[*[_], MrBrownFail]
   ] extends MrBrown[F] {
   val baz: BazCtx => String = _.baz
 
-  def hello(): F[String] = 
+  def hello()(implicit 
+    ask: Ask[F, BazCtx],
+    raise: Raise[F, MrBrownFail]
+  ): F[String] = 
     baz.reader >>= {baz => MrBrownFail(s"fail of ${baz}").raise}
 
   def puke(): F[String] = 

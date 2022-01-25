@@ -8,14 +8,14 @@ import com.example.gofc.types._
 import cats.mtl.Raise
 
 trait MrGreen[F[_]] {
-  def hello(): F[String]
+  def hello()(implicit ask: Ask[F, GerCtx]): F[String]
   def puke(): F[String]
 }
 
-class MrGreenImpl[F[_]: Monad: Ask[*[_], GerCtx]: Raise[*[_], Throwable]] extends MrGreen[F] {
+class MrGreenImpl[F[_]: Monad : Raise[*[_], Throwable]] extends MrGreen[F] {
   val ger: GerCtx => String = _.ger
 
-  def hello(): F[String] = 
+  def hello()(implicit ask: Ask[F, GerCtx]): F[String] = 
     ger.reader >>= {ger => s"mr Green greets ${ger}".pure}
   
   def puke(): F[String] = 
