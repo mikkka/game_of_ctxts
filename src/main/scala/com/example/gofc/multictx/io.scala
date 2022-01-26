@@ -21,6 +21,8 @@ object IOAppa extends IOApp {
   type CtxIO[A] = Kleisli[IO, String, A]
   type CtxErrIO[A] = EitherT[CtxIO, Buzer, A]
 
+  val mona = implicitly[Monad[CtxErrIO]]
+
   implicit def hellRaiser[F[_]](implicit ME: MonadError[F, Throwable]) = new Raise[F, Throwable] {
     def functor: Functor[F] = ME
 
@@ -31,12 +33,9 @@ object IOAppa extends IOApp {
     def prntln(str: String): CtxErrIO[Unit] = implicitly[Console[CtxErrIO]].println(str)
   }
 
-  implicit val funK: CtxIO ~> CtxErrIO = 
-    λ[CtxIO ~> CtxErrIO]{ io => 
-      val eitherLift = EitherT.liftK[CtxIO, Buzer]
-      eitherLift(io)
-    }
-  
+  // if we use this - all needed errors from CtxIO have been handled already
+  implicit val funK: CtxIO ~> CtxErrIO = EitherT.liftK[CtxIO, Buzer]
+
   val prg = new PrgFG[CtxIO, CtxErrIO](
     new FutaImpl[CtxIO],
     new PrettyLoopa[CtxErrIO],
