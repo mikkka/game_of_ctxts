@@ -27,7 +27,7 @@ import izumi.reflect.Tag
 
 object ZIOAppa extends CatsApp {
 
-  // can't to this, because Async for ZIO[_ <: non throwable,_,_] is missing!
+  // can't do this, because Async for ZIO[_ <: non throwable,_,_] is missing!
   // type CtxErrIO[A] = ZIO[String, Buzer, A]
   // val ctxIOErrAsync = implicitly[Async[CtxErrIO]]
 
@@ -76,14 +76,17 @@ object ZIOAppa extends CatsApp {
 
   import zio.console._
 
-  def run(args: List[String]): URIO[ZEnv, ExitCode] =
-    prg
-      .things(Future.successful("101").pure[CtxErrIO])
-      .value
-      .provideCustomLayer(ZIO.succeed("1").toLayer)
+  def run(args: List[String]): URIO[ZEnv, ExitCode] = {
+    val ctx = ZIO.succeed("1").toLayer
+    val res = prg
+      .things(Future.successful("101").pure[CtxErrIO]).value
+
+    res
+      .provideCustomLayer(ctx)
       .tap(x => putStrLn("run : " + x))
       .fold(
           _ => ExitCode.failure,
           _ => ExitCode.success
       )
+  }
 }

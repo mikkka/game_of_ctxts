@@ -25,8 +25,6 @@ import com.example.gofc.prg.ger_bar.MrOrange
 import com.example.gofc.prg.ger_bar.MrOrangeImpl
 
 object IOAppa extends IOApp {
-
-
   type Ctx = (BazCtx,GerCtx)
   type Err = Either[FooErr,BarErr]
   type KleisliX[A] = Kleisli[IO, Ctx, A]

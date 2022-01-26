@@ -34,14 +34,18 @@ object types {
     type BazFooTSK[A] = EitherT[BazTSK, FooErr, A] // can be bombed with throwable or FooErr
     type GerBarTSK[A] = EitherT[GerTSK, BarErr, A] // can be bombed with throwable or BarErr
   }
-  object zio {
-    type TSK[A] = UIO[A] // can be defected with throwable
+  object zi {
+    import zio.blocking._
+    import zio.clock._
+    import zio.Has
 
-    type BazTSK[A] = RIO[BazCtx, A] // can be defected with throwable
-    type GerTSK[A] = RIO[GerCtx, A] // can be defected with throwable
+    type TSK[A] = RIO[Clock with Blocking, A] // can be defected with throwable
 
-    type BazFooTSK[A] = ZIO[BazCtx, FooErr, A] // can be defected with throwable or errorized with FooErr
-    type GerBarTSK[A] = ZIO[GerCtx, BarErr, A] // can be defected with throwable or errorized with FooErr
+    type BazTSK[A] = RIO[Has[BazCtx], A] // can be defected with throwable
+    type GerTSK[A] = RIO[Has[GerCtx], A] // can be defected with throwable
+
+    type BazFooTSK[A] = ZIO[Has[BazCtx], FooErr, A] // can be defected with throwable or errorized with FooErr
+    type GerBarTSK[A] = ZIO[Has[GerCtx], BarErr, A] // can be defected with throwable or errorized with FooErr
   }
 
   // type Defect[F[_]] = Raise[F, Throwable]
